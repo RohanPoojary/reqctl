@@ -17,12 +17,8 @@ func Example_retry() {
 		return
 	}
 
-	// Create a new context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
 	// Create a new request controller
-	ctlr := reqctl.Request(ctx, request).
+	ctlr := reqctl.Request(context.TODO(), request).
 		SetExponentialRetry(100*time.Millisecond, 3)
 
 	// Execute the request
@@ -45,12 +41,8 @@ func Example_timeout() {
 		return
 	}
 
-	// Create a new context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
 	// Create a new request controller
-	ctlr := reqctl.Request(ctx, request).
+	ctlr := reqctl.Request(context.TODO(), request).
 		SetTimeout(100 * time.Millisecond)
 
 	// Request should fail as the api takes 1 second to respond
@@ -70,12 +62,8 @@ func Example_fastestFirst() {
 		return
 	}
 
-	// Create a new context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
 	// Create a new request controller
-	ctlr := reqctl.Request(ctx, request).
+	ctlr := reqctl.Request(context.TODO(), request).
 		SetParallelCallWithDelay(100 * time.Millisecond)
 
 	// Request should respond with 200 as the fastest request is successful
@@ -98,23 +86,20 @@ func Example_advanced() {
 		return
 	}
 
-	// Create a new context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
-	// A complex request handling, where every request shall have timeout of 100ms,
-	// if the request fails, a timeout will be triggered with a delay of 50ms upto 3 times.
-	// If the overall response time ( with retry ) takes more than 150ms,
+	// A complex request handling, where every request shall have timeout of 1s,
+	// if the request fails, a timeout will be triggered with a delay of 100ms upto 3 times.
+	// If the overall response time ( with retry ) takes more than 500ms,
 	// a parallel call shall be fired with same timeout & retry policy.
-	ctlr := reqctl.Request(ctx, request).
-		SetTimeout(100*time.Millisecond).
-		SetSimpleRetry(50*time.Millisecond, 3).
-		SetParallelCallWithDelay(150 * time.Millisecond)
+	ctlr := reqctl.Request(context.TODO(), request).
+		SetTimeout(time.Second).
+		SetSimpleRetry(100*time.Millisecond, 3).
+		SetParallelCallWithDelay(500 * time.Millisecond)
 
 	// Request should respond with 200 as the fastest request is successful
 	httpResp, err := ctlr.Do()
 	if err != nil {
 		fmt.Printf("Request failed: %v", err)
+		return
 	}
 
 	fmt.Printf("Response Code: %v", httpResp.StatusCode)

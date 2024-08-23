@@ -38,10 +38,9 @@ type ctrl struct {
 	ctx    context.Context
 	req    *http.Request
 	config struct {
-		currentCount int // TODO: Validate the usecase of this field
-		retryCfg     *retryConfig
-		asyncCfg     *asyncRetryConfig
-		timeout      time.Duration
+		retryCfg *retryConfig
+		asyncCfg *asyncRetryConfig
+		timeout  time.Duration
 	}
 }
 
@@ -205,24 +204,28 @@ func (c *ctrl) doRetry(client *http.Client) (*http.Response, error) {
 	var resultErr error
 	var resultResp *http.Response
 
-	for i := 0; i <= retryCfg.MaxCount; i++ {
-		if resultResp, resultErr = c.doRequest(client); retryCfg.RetryType != noRetry &&
-			retryCfg.RetryCheckFunc(resultResp, resultErr) {
+	// Check if the first request succeeds
+	if resultResp, resultErr = c.doRequest(client); retryCfg.RetryType == noRetry ||
+		!retryCfg.RetryCheckFunc(resultResp, resultErr) {
+		return resultResp, resultErr
+	}
 
-			// Calculate waiting duration for next execution
-			var waitDuration time.Duration
-			if retryCfg.RetryType == simpleRetry {
-				waitDuration = retryCfg.RetryInterval
-			} else if retryCfg.RetryType == exponentialRetry {
-				waitDuration = retryCfg.RetryInterval * time.Duration(math.Exp2(float64(i)))
-			}
+	// Initiate retry logic with delay
+	for i := 0; i < retryCfg.MaxCount; i++ {
 
-			if waitDuration > 0 {
-				time.Sleep(waitDuration)
-			}
+		// Calculate waiting duration for next execution
+		var waitDuration time.Duration
+		if retryCfg.RetryType == simpleRetry {
+			waitDuration = retryCfg.RetryInterval
+		} else if retryCfg.RetryType == exponentialRetry {
+			waitDuration = retryCfg.RetryInterval * time.Duration(math.Exp2(float64(i)))
+		}
 
-			c.config.currentCount++
-		} else {
+		if waitDuration > 0 {
+			time.Sleep(waitDuration)
+		}
+
+		if resultResp, resultErr = c.doRequest(client); !retryCfg.RetryCheckFunc(resultResp, resultErr) {
 			break
 		}
 	}

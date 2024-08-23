@@ -3,12 +3,33 @@ package reqctl_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/RohanPoojary/reqctl"
 )
+
+func TestSuccessCall(t *testing.T) {
+	failureURL := "https://httpbin.org/status/200"
+	request, err := http.NewRequest("GET", failureURL, nil)
+	if err != nil {
+		t.Errorf("Error creating request: %v", err)
+		return
+	}
+
+	ctx := context.Background()
+	httpResp, err := reqctl.Request(ctx, request).Do()
+
+	if err != nil {
+		t.Errorf("Request should have succeeded, Error: %v", err)
+	}
+
+	if httpResp.StatusCode != 200 {
+		t.Errorf("Expected status code 200, got %d", httpResp.StatusCode)
+	}
+}
 
 func TestSimpleRetry(t *testing.T) {
 	failureURL := "https://httpbin.org/delay/1"
@@ -68,7 +89,7 @@ func TestExponentialRetry(t *testing.T) {
 
 	start := time.Now()
 	resp, err := reqctl.Request(context.Background(), request).
-		SetExponentialRetryWithChecker(1*time.Second, 3, customChecker).
+		SetExponentialRetryWithChecker(500*time.Millisecond, 3, customChecker).
 		Do()
 
 	if err != nil {
@@ -81,9 +102,11 @@ func TestExponentialRetry(t *testing.T) {
 		return
 	}
 
-	if time.Since(start) < 6*time.Second {
-		t.Errorf("Expected atleast 6s of total delay, got %v", time.Since(start))
+	if time.Since(start) < 3500*time.Millisecond {
+		t.Errorf("Expected atleast 3.5s of total delay, got %v", time.Since(start))
 	}
+
+	fmt.Println("Total time taken:", time.Since(start))
 }
 
 func TestTimeout(t *testing.T) {
