@@ -3,7 +3,6 @@ package reqctl_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -106,7 +105,6 @@ func TestExponentialRetry(t *testing.T) {
 		t.Errorf("Expected atleast 3.5s of total delay, got %v", time.Since(start))
 	}
 
-	fmt.Println("Total time taken:", time.Since(start))
 }
 
 func TestTimeout(t *testing.T) {

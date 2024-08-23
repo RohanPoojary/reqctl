@@ -107,8 +107,8 @@ resp, err := ctrl.Do()
 ```
 
 ## TODO
-[ ] Support all request methods of default httpClient.
-[ ] Use `net/http/httptest` module for test cases.
+- [ ] Support all request methods of default httpClient.
+- [ ] Use `net/http/httptest` module for test cases.
 
 ## License
 This project is licensed under the Open Source MIT License - see the LICENSE file for details.
