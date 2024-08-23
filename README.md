@@ -1,4 +1,10 @@
 # reqctl
+[![Run Test Cases](https://github.com/RohanPoojary/reqctl/actions/workflows/run-tests.yml/badge.svg)](https://github.com/RohanPoojary/reqctl/actions/workflows/run-tests.yml)
+[![Coverage Status](https://coveralls.io/repos/github/RohanPoojary/reqctl/badge.svg?branch=main)](https://coveralls.io/github/RohanPoojary/reqctl?branch=main)
+[![Go Report Card](https://goreportcard.com/badge/github.com/RohanPoojary/reqctl)](https://goreportcard.com/report/github.com/RohanPoojary/reqctl)
+[![GoDoc](https://godoc.org/github.com/RohanPoojary/reqctl?status.svg)](https://godoc.org/github.com/RohanPoojary/reqctl)
+
+
 reqctl is a Go package that provides enhanced control over HTTP requests, including retry mechanisms and asynchronous execution.
 
 ## Features
