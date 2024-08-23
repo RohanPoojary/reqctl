@@ -1,4 +1,4 @@
-package reqctl
+package reqctl_test
 
 import (
 	"context"
@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/RohanPoojary/reqctl"
 )
 
 func TestSimpleRetry(t *testing.T) {
-	failureURL := "https://httpbin.org/status/500"
+	failureURL := "https://httpbin.org/delay/1"
 	request, err := http.NewRequest("GET", failureURL, nil)
 	if err != nil {
 		t.Errorf("Error creating request: %v", err)
@@ -19,12 +21,12 @@ func TestSimpleRetry(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	ctlr := Request(ctx, request).
+	ctlr := reqctl.Request(ctx, request).
 		SetSimpleRetry(10*time.Millisecond, 3)
 
 	_, err = ctlr.Do()
 	if err == nil {
-		t.Errorf("Request should have failed due to retry")
+		t.Errorf("Request should have failed even after retry")
 	}
 }
 
@@ -43,7 +45,7 @@ func TestRetryWithCustomFunc(t *testing.T) {
 		return execCount < 3
 	}
 
-	_, err = Request(context.Background(), request).
+	_, err = reqctl.Request(context.Background(), request).
 		SetSimpleRetryWithChecker(100*time.Millisecond, 3, customChecker).
 		Do()
 
@@ -65,7 +67,7 @@ func TestExponentialRetry(t *testing.T) {
 	}
 
 	start := time.Now()
-	resp, err := Request(context.Background(), request).
+	resp, err := reqctl.Request(context.Background(), request).
 		SetExponentialRetryWithChecker(1*time.Second, 3, customChecker).
 		Do()
 
@@ -92,7 +94,7 @@ func TestTimeout(t *testing.T) {
 		return
 	}
 
-	_, err = Request(request.Context(), request).
+	_, err = reqctl.Request(request.Context(), request).
 		SetTimeout(10 * time.Millisecond).
 		Do()
 
@@ -102,7 +104,7 @@ func TestTimeout(t *testing.T) {
 
 }
 
-func TestDelayedParallelCall(t *testing.T) {
+func TestParallelCallWithDelay(t *testing.T) {
 	delayURL := "https://httpbin.org/status/200"
 	request, err := http.NewRequest("GET", delayURL, nil)
 	if err != nil {
@@ -110,8 +112,8 @@ func TestDelayedParallelCall(t *testing.T) {
 		return
 	}
 
-	_, err = Request(request.Context(), request).
-		SetDelayedParallelCall(100 * time.Millisecond).
+	_, err = reqctl.Request(request.Context(), request).
+		SetParallelCallWithDelay(100 * time.Millisecond).
 		Do()
 
 	if err != nil {

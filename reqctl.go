@@ -98,8 +98,8 @@ func (c ctrl) SetTimeout(timeout time.Duration) ctrl {
 	return c
 }
 
-// SetDelayedParallelCall configures asynchronous retry
-func (c ctrl) SetDelayedParallelCall(delay time.Duration) ctrl {
+// SetParallelCallWithDelay configures asynchronous retry
+func (c ctrl) SetParallelCallWithDelay(delay time.Duration) ctrl {
 	c.config.asyncCfg = &asyncRetryConfig{
 		Delay: delay,
 	}
@@ -148,8 +148,7 @@ func (c *ctrl) doAsync(client *http.Client) (*http.Response, error) {
 	var resErr error
 
 	once := sync.Once{}
-	doneCh := make(chan struct{}, 2)
-	defer close(doneCh)
+	doneCh := make(chan struct{})
 
 	aCtx, cancel := context.WithCancel(c.ctx)
 	defer cancel()
@@ -160,7 +159,12 @@ func (c *ctrl) doAsync(client *http.Client) (*http.Response, error) {
 		asyncCtrl.ctx = aCtx
 
 		if timeout > 0 {
-			time.Sleep(timeout)
+			select {
+			// Either wait till one of the routine is closed or until timeout
+			case <-doneCh:
+				return
+			case <-time.After(timeout):
+			}
 		}
 
 		// Validate if the context is still active
@@ -169,7 +173,7 @@ func (c *ctrl) doAsync(client *http.Client) (*http.Response, error) {
 			once.Do(func() {
 				result = res
 				resErr = err
-				doneCh <- struct{}{}
+				close(doneCh)
 			})
 		}
 	}
