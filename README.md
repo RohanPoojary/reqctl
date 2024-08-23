@@ -21,7 +21,7 @@ Basic Request
 import (
     "context"
     "net/http"
-    "github.com/yourusername/reqctl"
+    "github.com/RohanPoojary/reqctl"
 )
 
 func main() {
